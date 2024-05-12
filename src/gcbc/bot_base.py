@@ -1,12 +1,15 @@
 import enum
 from dataclasses import dataclass
-from typing import Optional, List, Any, Literal
+from typing import Optional, List, Any, Literal, Tuple
 
 
 '''
 Rules for the game can be found at:
 https://upload.snakesandlattes.com/rules/g/GoodCopBadCop.pdf
 '''
+
+Player = int
+Card = int
 
 
 class RoleType(enum.Enum):
@@ -29,56 +32,106 @@ class IntegrityCard(enum.Enum):
 
 
 @dataclass
-class Equipment:
+class EquipmentDesc:
     name: str
     desc: str
 
 
 class EquipmentCard(enum.Enum):
-    TASER = Equipment(
+    TASER = EquipmentDesc(
         'Taser',
         'Steal someones gun'
     )
-    SMOKE_GRENADE = Equipment(
+    SMOKE_GRENADE = EquipmentDesc(
         'Smoke Grenade',
         'Reverse the turn order'
     )
-    DEFIBRILLATOR = Equipment(
+    DEFIBRILLATOR = EquipmentDesc(
         'Defibrillator',
         'Revive a fallen comrade'
     )
-    BLACKMAIL = Equipment(
+    BLACKMAIL = EquipmentDesc(
         'Blackmail',
         'Flip bad-cops to good and vice-versa'
     )
-    POLYGRAPH = Equipment(
+    POLYGRAPH = EquipmentDesc(
         'Polygraph',
         'Show your cards to a player, and see all their cards'
     )
-    TRUTH_SERUM = Equipment(
+    TRUTH_SERUM = EquipmentDesc(
         'Truth Serum',
         'Pick any players face-down card and flip it over'
     )
-    AUDIT = Equipment(
+    AUDIT = EquipmentDesc(
         'Audit',
         'Pick two cards from two players to inspect'
     )
-    EVIDENCE_BAG = Equipment(
+    EVIDENCE_BAG = EquipmentDesc(
         'Evidence bag',
         'The last card that was inspected has to be flipped over'
     )
-    SWAP = Equipment(
+    SWAP = EquipmentDesc(
         'Swap',
         'Swap any two cards between two players'
     )
-    GUN_CONTROL = Equipment(
+    GUN_CONTROL = EquipmentDesc(
         'Gun control',
         'Interrupt a firing gun to have them pick another player'
     )
-    PLANTED_EVIDENCE = Equipment(
+    PLANTED_EVIDENCE = EquipmentDesc(
         'Planted evidence',
         'Investigate one face-down card from any players holding a gun'
     )
+
+
+@dataclass
+class EquipmentConsumption:
+    equipment_card: EquipmentCard
+    constraint: Any
+
+    @staticmethod
+    def taser(target: Player) -> 'EquipmentConsumption':
+        return EquipmentConsumption(EquipmentCard.TASER, target)
+    
+    @staticmethod
+    def smoke_grenade() -> 'EquipmentConsumption':
+        return EquipmentConsumption(EquipmentCard.SMOKE_GRENADE, None)
+    
+    @staticmethod
+    def defibrillator(target: Player) -> 'EquipmentConsumption':
+        return EquipmentConsumption(EquipmentCard.DEFIBRILLATOR, target)
+
+    @staticmethod
+    def blackmail(target: Player) -> 'EquipmentConsumption':
+        return EquipmentConsumption(EquipmentCard.BLACKMAIL, target)
+
+    @staticmethod
+    def polygraph(target: Player) -> 'EquipmentConsumption':
+        return EquipmentConsumption(EquipmentCard.POLYGRAPH, target)
+
+    @staticmethod
+    def truth_serum(target: Player, card: Card) -> 'EquipmentConsumption':
+        return EquipmentConsumption(EquipmentCard.TRUTH_SERUM, [target, card])
+
+    @staticmethod
+    def audit(target1: Player, card1: Card, target2: Player, card2: Card) -> 'EquipmentConsumption':
+        return EquipmentConsumption(EquipmentCard.AUDIT, [[target1, card1], [target2, card2]])
+
+    @staticmethod
+    def evidence_bag() -> 'EquipmentConsumption':
+        return EquipmentConsumption(EquipmentCard.EVIDENCE_BAG, None)
+
+    @staticmethod
+    def swap(target1: Player, card1: Card, target2: Player, card2: Card) -> 'EquipmentConsumption':
+        return EquipmentConsumption(EquipmentCard.SWAP, [[target1, card1], [target2, card2]])
+
+    @staticmethod
+    def gun_control(target: Player) -> 'EquipmentConsumption':
+        return EquipmentConsumption(EquipmentCard.GUN_CONTROL, target)
+
+    @staticmethod
+    def planted_evidence(targets: List[Tuple[Player, Card]]) -> 'EquipmentConsumption':
+        return EquipmentConsumption(EquipmentCard.PLANTED_EVIDENCE, targets)
 
 
 class ActionType(enum.Enum):
@@ -99,7 +152,7 @@ class Action:
     metadata: Any
 
     @staticmethod
-    def investigate(player: int, card: int) -> 'Action':
+    def investigate(player: Player, card: Card) -> 'Action':
         return Action(ActionType.INVESTIGATE, [player, card])
     
     @staticmethod
@@ -107,7 +160,7 @@ class Action:
         return Action(ActionType.EQUIP, None)
     
     @staticmethod
-    def aim(player):
+    def aim(player: Player):
         return Action(ActionType.AIM, player)
     
     @staticmethod
@@ -154,26 +207,28 @@ class OtherUpdateType(enum.Enum):
     EQUIPMENT_CARD = 0
     CARD_FLIP = 1
     GAME_PHASE_START = 2
+    SWAP = 3
+    INVESTIGATION_RESULT = 4
 
 
 @dataclass
 class Update:
     type: ActionType | OtherUpdateType
-    actor: int | None
+    actor: Player | None
     data: Any
 
     @staticmethod
-    def action(actor: int, action: Action) -> 'Update':
+    def action(actor: Player, action: Action) -> 'Update':
         return Update(action.type, actor, action)
     
     @staticmethod
-    def play_equipment_card(actor: int, equipment_card: EquipmentCard) -> 'Update':
-        return Update(OtherUpdateType.EQUIPMENT_CARD, actor, equipment_card)
+    def play_equipment_card(actor: Player, equipment_consumption: EquipmentConsumption) -> 'Update':
+        return Update(OtherUpdateType.EQUIPMENT_CARD, actor, equipment_consumption)
 
     @staticmethod
     def flip_card(
-        actor: int,
-        card: int,
+        actor: Player,
+        card: Card,
         value: IntegrityCard,
         trigger: Literal[ActionType.EQUIP, EquipmentCard.EVIDENCE_BAG, EquipmentCard.TRUTH_SERUM]
     ) -> 'Update':
@@ -195,6 +250,18 @@ class Update:
             game_phase
         )
 
+    @staticmethod
+    def investigation_result(actor: Player, target: Player, card: Card, value: IntegrityCard) -> 'Update':
+        return Update(
+            OtherUpdateType.INVESTIGATION_RESULT,
+            actor,
+            {
+                'target': target,
+                'card': card,
+                'value': value
+            }
+        )
+
 
 class BotTemplate(object):
 
@@ -203,7 +270,8 @@ class BotTemplate(object):
     def __init__(
         self,
         integrity_cards: List[IntegrityCard],
-        num_players: int) -> 'BotTemplate':
+        num_players: int,
+        player_number: Player) -> 'BotTemplate':
 
         self._integrity_cards = integrity_cards
         self.num_players = num_players
@@ -216,7 +284,7 @@ class BotTemplate(object):
     def integrity_cards(self, value: List[IntegrityCard]) -> None:
         self._integrity_cards = value
 
-    def pre_round(self) -> Optional[EquipmentCard]:
+    def pre_round(self) -> Optional[EquipmentConsumption]:
         # TODO: add validation for pre-round
         return self._pre_round()
 
@@ -224,7 +292,7 @@ class BotTemplate(object):
         # TODO: add validation for valid actions
         return self._action()
 
-    def action_interrupt(self) -> Optional[EquipmentCard]:
+    def action_interrupt(self) -> Optional[EquipmentConsumption]:
         # TODO: add validation for valid interrupts
         return self._action_interrupt()
     
@@ -240,13 +308,13 @@ class BotTemplate(object):
     
     # END: Internal-code, do not touch!
 
-    def _pre_round(self) -> Optional[EquipmentCard]:
+    def _pre_round(self) -> Optional[EquipmentConsumption]:
         return None
 
     def _action(self) -> Action:
         return Action.equip()
 
-    def _action_interrupt(self) -> Optional[EquipmentCard]:
+    def _action_interrupt(self) -> Optional[EquipmentConsumption]:
         pass
 
     def _action_correction(self, prev_action: Action) -> Action:
