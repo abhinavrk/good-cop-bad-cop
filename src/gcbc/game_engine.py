@@ -91,14 +91,22 @@ class GCBCGameEngine:
         self.turn_increment = 1
         self.current_phase = TurnPhase.PRE_ROUND
 
-    def play_game(self):
-        win_condition = None
-        while win_condition is None:
+    def play_round(self):
+        win_condition = self.win_condition()
+        if win_condition is None:
             self.run_round()
-            win_condition = self.win_condition()
+            next_player = self.next_player(self.current_player)
+            self.current_player = next_player
 
         return win_condition
 
+    def next_player(self, curr_player: Player):
+        next_player = (curr_player + self.turn_increment) % len(self.bots)
+        if self.is_player_alive(next_player):
+            return next_player
+        else:
+            return self.next_player(next_player)
+    
     def run_round(self):
         self.current_phase = TurnPhase.PRE_ROUND
         self.emit_global_update(Update.game_phase_start(TurnPhase.PRE_ROUND))
@@ -117,8 +125,6 @@ class GCBCGameEngine:
 
         self.aim()
 
-        self.move_to_next_player()
-
     def win_condition(self):
         players = self.state.keys()
         # only one player alive
@@ -129,13 +135,13 @@ class GCBCGameEngine:
         # agent/kingpin dead
         for p in players:
             if self.is_player_alive(p):
-                if self.is_player_x(IntegrityCard.AGENT) and self.is_player_x(IntegrityCard.KINGPIN):
+                if self.is_player_x(p, IntegrityCard.AGENT) and self.is_player_x(p, IntegrityCard.KINGPIN):
                     return WinCondition.AGENT_IS_KINGPIN
             else:
-                if self.is_player_x(IntegrityCard.AGENT):
+                if self.is_player_x(p, IntegrityCard.AGENT):
                     return WinCondition.AGENT_DEAD
 
-                if self.is_player_x(IntegrityCard.KINGPIN):
+                if self.is_player_x(p, IntegrityCard.KINGPIN):
                     return WinCondition.KINGPIN_DEAD
         
         return None
@@ -183,8 +189,7 @@ class GCBCGameEngine:
         return additional_round_needed
 
     def enact_preround(self, actor: Player, card: EquipmentConsumption):
-        self.update_state(actor, equipment=None)
-        self.equipment.insert(0, card.equipment_card)
+        assert card.equipment_card == self.state[actor].equipment, "playing a card you don't have"
 
         match card.equipment_card:
             case EquipmentCard.TASER:
@@ -226,6 +231,7 @@ class GCBCGameEngine:
                     for x in target_cards
                 ]
                 self.update_state(target, integrity_cards=new_integrity_cards)
+                self.bots[target].integrity_cards = [x.card for x in new_integrity_cards]
 
             case EquipmentCard.POLYGRAPH:
                 target = card.constraint
@@ -241,7 +247,7 @@ class GCBCGameEngine:
                 self.emit_investigation_result(target, actor, 2)
 
             case EquipmentCard.SWAP:
-                target1, card1, target2, card2 = card.constraint
+                [[target1, card1], [target2, card2]] = card.constraint
                 if target1 == target2:
                     raise ValueError(f"cannot swap cards between the same player")
 
@@ -262,6 +268,9 @@ class GCBCGameEngine:
             case _:
                 raise ValueError(f"Cannot play {card} in preround")
 
+        self.update_state(actor, equipment=None)
+        self.equipment.insert(0, card.equipment_card)
+
     def update_state(self, player: Player, **changes: Any):
         self.state[player] = replace(self.state[player], **changes)
 
@@ -278,6 +287,12 @@ class GCBCGameEngine:
         target_state = self.state[target]
         card_val = target_state.integrity_cards[card]
         update = Update.investigation_result(recipient, target, card, card_val.card)
+        self.bots[recipient].on_board_update(update)
+
+    def emit_equip_result(self, recipient: Player):
+        target_state = self.state[recipient]
+        card_val = target_state.equipment
+        update = Update.equip_result(recipient, card_val)
         self.bots[recipient].on_board_update(update)
 
     def emit_global_update(self, update: Update):
@@ -311,14 +326,14 @@ class GCBCGameEngine:
             raise ValueError("You have to flip a facedown card")
 
     def action(self):
-        update = Update.action(self.current_player, action)
-        self.emit_global_update(update)
         checkpoint_action = self.checkpoint()
         try:
             action = self.bots[self.current_player].action()
+            update = Update.action(self.current_player, action)
+            self.emit_global_update(update)
             self.enact_action(action)
         except Exception as e:
-            self.emit_global_update(Update.rollback_move(update.uuid))
+            self.emit_global_update(Update.rollback_move(update.uuid if update is not None else None))
             self.restore_checkpoint(checkpoint_action)
             # at this point, this is going to be a move-pass
             update = Update.action(self.current_player, Action.passMove())
@@ -337,6 +352,7 @@ class GCBCGameEngine:
                 self.flip_card(self.current_player, card_to_flip, ActionType.EQUIP)
                 ec = self.equipment.pop()
                 self.update_state(self.current_player, equipment=ec)
+                self.emit_equip_result(self.current_player)
             case ActionType.ARM_AND_AIM:
                 assert self.gun_count > 0, "no guns to arm and aim"
                 assert (

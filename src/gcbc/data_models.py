@@ -174,7 +174,7 @@ class Action:
     @staticmethod
     def shoot():
         return Action(ActionType.SHOOT, None)
-    
+
     @staticmethod
     def passMove():
         return Action(ActionType.PASS, None)
@@ -211,9 +211,9 @@ class OtherUpdateType(enum.Enum):
     EQUIPMENT_CARD = 0
     CARD_FLIP = 1
     TURN_PHASE_START = 2
-    SWAP = 3
     INVESTIGATION_RESULT = 4
     ROLLBACK_INCLUDING = 5
+    EQUIP_RESULT = 6
 
 
 # describes any game-state updates, either from actions or other updates
@@ -223,7 +223,7 @@ class Update:
     type: ActionType | OtherUpdateType
     actor: Player | None
     data: Any
-    uuid: UUID = field(default_factory = uuid4)
+    uuid: UUID = field(default_factory=uuid4)
 
     @staticmethod
     def action(actor: Player, action: Action) -> "Update":
@@ -264,11 +264,15 @@ class Update:
             actor,
             {"target": target, "card": card, "value": value},
         )
-    
+
     @staticmethod
     def rollback_move(move_uuid: UUID) -> "Update":
         # someone screwed up - so the last move is getting undone
         return Update(OtherUpdateType.ROLLBACK_INCLUDING, None, move_uuid)
+
+    @staticmethod
+    def equip_result(actor: Player, value: EquipmentCard) -> "Update":
+        return Update(OtherUpdateType.EQUIP_RESULT, actor, value)
 
 
 class PlayerHealthState:
