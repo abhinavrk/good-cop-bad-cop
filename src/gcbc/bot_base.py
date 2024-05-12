@@ -1,12 +1,14 @@
 import enum
 from dataclasses import dataclass
-from typing import Optional, List, Any, Literal, Tuple
+from typing import Optional, List, Any, Literal, Tuple, Dict
 
 
 '''
 Rules for the game can be found at:
 https://upload.snakesandlattes.com/rules/g/GoodCopBadCop.pdf
 '''
+
+# BEGIN: Internal-code, do not touch!
 
 Player = int
 Card = int
@@ -15,20 +17,26 @@ Card = int
 class RoleType(enum.Enum):
     GOOD = 0
     BAD = 1
+    UNKNOWN = 2 # a special type - only available through game-state
 
 
 @dataclass
 class Role:
     name: str
-    freq: int
+    freq: int # used so you know how many of that type of card there is
     type: RoleType
 
 
+# the different types of roles available - will be dealt randomly
 class IntegrityCard(enum.Enum):
     KINGPIN = Role('Kingpin', 1, RoleType.BAD)
     AGENT = Role('Agent', 1, RoleType.GOOD)
     GOOD_COP = Role('Good Cop', 12, RoleType.GOOD)
     BAD_COP = Role('Bad Cop', 10, RoleType.BAD)
+
+    # this will never be in your hand, this only comes in when you're looking at
+    # someone else's card
+    UNKNOWN = Role('Unknown', 24, RoleType.UNKNOWN)
 
 
 @dataclass
@@ -37,6 +45,7 @@ class EquipmentDesc:
     desc: str
 
 
+# the different types of equipment cards
 class EquipmentCard(enum.Enum):
     TASER = EquipmentDesc(
         'Taser',
@@ -84,6 +93,9 @@ class EquipmentCard(enum.Enum):
     )
 
 
+# used to describe the use of an equipment card, includes the equipment card itself
+# as well as any metadata (e.g. target-player etc). Use the utility methods instead of
+# constructing the class yourself.
 @dataclass
 class EquipmentConsumption:
     equipment_card: EquipmentCard
@@ -141,13 +153,11 @@ class ActionType(enum.Enum):
     SHOOT = 3
 
 
+# used to describe taking an action - includes the action itself, as well
+# as any metadata e.g. the target player for a shot. Use the utility methods
+# instead of constructing the class yourself
 @dataclass
 class Action:
-    '''
-    Please do not create actions directly, instead use the utility methods
-    in this class
-    '''
-
     type: ActionType
     metadata: Any
 
@@ -168,7 +178,8 @@ class Action:
         return Action(ActionType.SHOOT, None)
 
 
-class GamePhase(enum.Enum):
+# describes the current game-turn-phase
+class TurnPhase(enum.Enum):
     '''
     This pre-round is used to resolve any equipment cards that are played before the
     current players round. Only equipment cards can be played in this round.
@@ -203,14 +214,17 @@ class GamePhase(enum.Enum):
     AIM = 4
 
 
+# describes other updates (not caused by taking actions)
 class OtherUpdateType(enum.Enum):
     EQUIPMENT_CARD = 0
     CARD_FLIP = 1
-    GAME_PHASE_START = 2
+    TURN_PHASE_START = 2
     SWAP = 3
     INVESTIGATION_RESULT = 4
 
 
+# describes any game-state updates, either from actions or other updates
+# includes metadata on the event
 @dataclass
 class Update:
     type: ActionType | OtherUpdateType
@@ -243,11 +257,11 @@ class Update:
         )
 
     @staticmethod
-    def game_phase_start(game_phase: GamePhase) -> 'Update':
+    def game_phase_start(turn_phase: TurnPhase) -> 'Update':
         return Update(
-            OtherUpdateType.GAME_PHASE_START,
+            OtherUpdateType.TURN_PHASE_START,
             None,
-            game_phase
+            turn_phase
         )
 
     @staticmethod
@@ -263,18 +277,34 @@ class Update:
         )
 
 
-class BotTemplate(object):
+# a utility class to get the current-state of the game
+class GameState:
+    def current_player() -> Player:
+        pass
 
-    # BEGIN: Internal-code, do not touch!
+    def current_table_state() -> Dict[Player, Dict[Card, IntegrityCard]]:
+        pass
+
+    def update_history() -> List[Update]:
+        pass
+
+    def current_game_turn_phase() -> TurnPhase:
+        pass
+
+
+class BotTemplate:
 
     def __init__(
         self,
         integrity_cards: List[IntegrityCard],
         num_players: int,
-        player_number: Player) -> 'BotTemplate':
+        player_number: Player,
+        game: GameState) -> 'BotTemplate':
 
         self._integrity_cards = integrity_cards
         self.num_players = num_players
+        self.player_number = player_number
+        self.game = game
 
     @property
     def integrity_cards(self) -> List[IntegrityCard]:
