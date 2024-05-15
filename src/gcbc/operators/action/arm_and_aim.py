@@ -1,9 +1,16 @@
-from copy import deepcopy
-from gcbc.core.core_data import ActionType, Card, DeckState, Player, TableTopGameState
-from gcbc.action.base_action import BaseAction
+from gcbc.core.core_data import (
+    ActionType,
+    DeckState,
+    NotificationManager,
+    Player,
+    TableTopGameState,
+)
+from gcbc.data_models import Card
+from gcbc.operators.base_operator import BaseAction
+
 
 class ArmAndAim(BaseAction):
-    def __init__(self, actor: Player, target: Player, card_to_flip: int):
+    def __init__(self, actor: Player, target: Player, card_to_flip: Card):
         self.actor = actor
         self.target = target
         self.card_to_flip = card_to_flip
@@ -30,9 +37,8 @@ class ArmAndAim(BaseAction):
 
         return all_cards_face_up or card_face_down
 
-    def play(self, game: TableTopGameState, deck: DeckState) -> TableTopGameState:
-        new_state = deepcopy(game.state)
-        actor_state = new_state[self.actor]
+    def play(self, game: TableTopGameState, deck: DeckState):
+        actor_state = game.get_player_state(self.actor)
 
         if deck.get_gun():
             actor_state.gun.has_gun = True
@@ -42,12 +48,14 @@ class ArmAndAim(BaseAction):
             card_to_flip_state = actor_state.integrity_cards[self.card_to_flip]
             card_to_flip_state.face_up = True
 
-        return TableTopGameState(new_state)
+        return game, deck
 
-    def notify(self) -> dict:
-        return {
-            "action": ActionType.ARM_AND_AIM,
-            "actor": self.actor,
-            "target": self.target,
-            "card_to_flip": self.card_to_flip,
-        }
+    def notify(self, game: TableTopGameState, notif_manager: NotificationManager):
+        notif_manager.emit_public_notification(
+            {
+                "action": ActionType.ARM_AND_AIM,
+                "actor": self.actor,
+                "target": self.target,
+                "card_to_flip": self.card_to_flip,
+            }
+        )

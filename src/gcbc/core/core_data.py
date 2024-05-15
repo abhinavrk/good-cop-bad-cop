@@ -2,6 +2,8 @@ import enum
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
+from gcbc.bot.base_bot import BaseBot
+
 """
 Rules for the game can be found at:
 https://upload.snakesandlattes.com/rules/g/GoodCopBadCop.pdf
@@ -187,3 +189,14 @@ class DeckState:
 
     def return_equipment_card(self, card: EquipmentCard):
         self.equipment_cards.insert(0, card)
+
+@dataclass
+class NotificationManager:
+    player_map: dict[Player, BaseBot]
+
+    def emit_public_notification(self, notification: dict):
+        for _, bot in self.player_map.items():
+            bot.on_public_notification(notification)
+
+    def emit_private_notification(self, player: Player, notification: dict):
+        self.player_map[player].on_private_notification(notification)

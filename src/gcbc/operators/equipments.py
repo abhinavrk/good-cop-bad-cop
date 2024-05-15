@@ -1,16 +1,18 @@
+from dataclasses import dataclass
+from gcbc.core.core_data import DeckState, Player, TableTopGameState
+from gcbc.operators.equipment.blackmail import Blackmail
+from gcbc.operators.equipment.defibrillator import Defibrillator
+from gcbc.operators.equipment.polygraph import Polygraph
+from gcbc.operators.equipment.swap import Swap
+from gcbc.operators.equipment.taser import Taser
 
-from gcbc.core.core_data import Player
-from gcbc.equipment.blackmail import Blackmail
-from gcbc.equipment.defibrillator import Defibrillator
-from gcbc.equipment.polygraph import Polygraph
-from gcbc.equipment.swap import Swap
-from gcbc.equipment.taser import Taser
 
-
+@dataclass
 class Equipments:
+    game: TableTopGameState
+    deck: DeckState
 
-    @staticmethod
-    def blackmail(user: Player, target: Player) -> Blackmail:
+    def blackmail(self, user: Player, target: Player) -> Blackmail:
         """
         Create a new instance of the Blackmail class.
 
@@ -25,12 +27,11 @@ class Equipments:
             ValueError: If the created Blackmail instance is invalid.
         """
         blackmail = Blackmail(user, target)
-        if not blackmail.is_valid(user, target):
+        if not blackmail.is_valid(self.game, self.deck):
             raise ValueError("Invalid Blackmail instance")
         return blackmail
 
-    @staticmethod
-    def defibrillator(user: Player, target: Player) -> Defibrillator:
+    def defibrillator(self, user: Player, target: Player) -> Defibrillator:
         """
         Create a new instance of the Defibrillator class.
 
@@ -45,12 +46,11 @@ class Equipments:
             ValueError: If the created Defibrillator instance is invalid.
         """
         defibrillator = Defibrillator(user, target)
-        if not defibrillator.is_valid(user, target):
+        if not defibrillator.is_valid(self.game, self.deck):
             raise ValueError("Invalid Defibrillator instance")
         return defibrillator
 
-    @staticmethod
-    def polygraph(user: Player, target: Player) -> Polygraph:
+    def polygraph(self, user: Player, target: Player) -> Polygraph:
         """
         Create a new instance of the Polygraph class.
 
@@ -65,12 +65,13 @@ class Equipments:
             ValueError: If the created Polygraph instance is invalid.
         """
         polygraph = Polygraph(user, target)
-        if not polygraph.is_valid(user, target):
+        if not polygraph.is_valid(self.game, self.user):
             raise ValueError("Invalid Polygraph instance")
         return polygraph
 
-    @staticmethod
-    def swap(user: Player, playerA: Player, cardA: int, playerB: Player, cardB: int) -> Swap:
+    def swap(
+        self, user: Player, playerA: Player, cardA: int, playerB: Player, cardB: int
+    ) -> Swap:
         """
         Create a new instance of the Swap class.
 
@@ -88,12 +89,11 @@ class Equipments:
             ValueError: If the created Swap instance is invalid.
         """
         swap = Swap(user, playerA, cardA, playerB, cardB)
-        if not swap.is_valid(user, playerA, cardA, playerB, cardB):
+        if not swap.is_valid(self.game, self.deck):
             raise ValueError("Invalid Swap instance")
         return swap
 
-    @staticmethod
-    def taser(user: Player, target: Player, aimed_at: Player) -> Taser:
+    def taser(self, user: Player, target: Player, aimed_at: Player) -> Taser:
         """
         Create a new instance of the Taser class.
 
@@ -109,6 +109,6 @@ class Equipments:
             ValueError: If the created Taser instance is invalid.
         """
         taser = Taser(user, target, aimed_at)
-        if not taser.is_valid(user, target, aimed_at):
+        if not taser.is_valid(self.game, self.deck):
             raise ValueError("Invalid Taser instance")
         return taser

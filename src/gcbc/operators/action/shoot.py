@@ -1,7 +1,15 @@
 from copy import deepcopy
-from gcbc.core.core_data import ActionType, Card, DeckState, Player, TableTopGameState
-from gcbc.action.base_action import BaseAction
+from gcbc.core.core_data import (
+    ActionType,
+    Card,
+    DeckState,
+    NotificationManager,
+    Player,
+    TableTopGameState,
+)
 from gcbc.core.core_data import IntegrityCard, PlayerHealthState
+from gcbc.operators.base_operator import BaseAction
+
 
 class Shoot(BaseAction):
     def __init__(self, actor: Player, target: Player):
@@ -24,10 +32,9 @@ class Shoot(BaseAction):
             and game.is_player_alive(target)
         )
 
-    def play(self, game: TableTopGameState, deck: DeckState) -> TableTopGameState:
-        new_state = deepcopy(game.state)
-        actor_state = new_state[self.actor]
-        target_state = new_state[self.target]
+    def play(self, game: TableTopGameState, deck: DeckState):
+        actor_state = game.state[self.actor]
+        target_state = game.state[self.target]
 
         # Check if the target has AGENT or KINGPIN card
         has_special_card = any(
@@ -49,11 +56,13 @@ class Shoot(BaseAction):
         actor_state.gun.aimed_at = None
         deck.return_gun()
 
-        return TableTopGameState(new_state)
+        return game, deck
 
-    def notify(self) -> dict:
-        return {
-            "action": ActionType.SHOOT,
-            "actor": self.actor,
-            "target": self.target,
-        }
+    def notify(self, game: TableTopGameState, notif_manager: NotificationManager):
+        notif_manager.emit_public_notification(
+            {
+                "action": ActionType.SHOOT,
+                "actor": self.actor,
+                "target": self.target,
+            }
+        )

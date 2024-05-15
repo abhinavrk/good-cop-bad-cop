@@ -1,6 +1,14 @@
 from copy import deepcopy
-from gcbc.core.core_data import ActionType, Card, DeckState, Player, TableTopGameState
-from gcbc.action.base_action import BaseAction
+from gcbc.core.core_data import (
+    ActionType,
+    Card,
+    DeckState,
+    NotificationManager,
+    Player,
+    TableTopGameState,
+)
+from gcbc.operators.base_operator import BaseAction
+
 
 class Equip(BaseAction):
     def __init__(self, actor: Player, card_to_flip: int):
@@ -32,9 +40,8 @@ class Equip(BaseAction):
 
         return all_cards_face_up or card_face_down
 
-    def play(self, game: TableTopGameState, deck: DeckState) -> TableTopGameState:
-        new_state = deepcopy(game.state)
-        actor_state = new_state[self.actor]
+    def play(self, game: TableTopGameState, deck: DeckState):
+        actor_state = game.state[self.actor]
 
         # Draw an equipment card
         equipment_card = deck.draw_equipment_card()
@@ -45,11 +52,28 @@ class Equip(BaseAction):
             card_to_flip_state = actor_state.integrity_cards[self.card_to_flip]
             card_to_flip_state.face_up = True
 
-        return TableTopGameState(new_state)
+        return game, deck
 
-    def notify(self) -> dict:
-        return {
-            "action": ActionType.EQUIP,
-            "actor": self.actor,
-            "card_to_flip": self.card_to_flip,
-        }
+    def notify(self, game: TableTopGameState, notif_manager: NotificationManager):
+        notif_manager.emit_public_notification(
+            {
+                "action": ActionType.EQUIP,
+                "actor": self.actor,
+                "card_to_flip": self.card_to_flip,
+            }
+        )
+
+    def private_notify(
+        self, game: TableTopGameState, notif_manager: NotificationManager
+    ):
+        equipped_card = game.state[self.actor].equipment
+        notif_manager.emit_private_notification(
+            self.actor,
+            {
+                "action": ActionType.EQUIP,
+                "private_data": {
+                    "actor": self.actor,
+                    "equipped_card": equipped_card,
+                },
+            },
+        )
