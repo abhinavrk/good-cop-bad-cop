@@ -1,11 +1,11 @@
 from copy import deepcopy
+from gcbc.bot.base_bot import BotManager
 from gcbc.core.core_data import (
     DeckState,
-    NotificationManager,
     Player,
     TableTopGameState,
 )
-from gcbc.data_models import EquipmentCard
+from gcbc.core.core_data import EquipmentCard
 from gcbc.operators.base_operator import BaseEquipment
 
 
@@ -30,7 +30,7 @@ class Polygraph(BaseEquipment):
         deck.return_equipment_card(EquipmentCard.POLYGRAPH)
         return game, deck
 
-    def notify(self, game: TableTopGameState, notif_manager: NotificationManager):
+    def notify(self, game: TableTopGameState, notif_manager: BotManager):
         notif_manager.emit_public_notification(
             {
                 "action": EquipmentCard.POLYGRAPH,
@@ -40,7 +40,7 @@ class Polygraph(BaseEquipment):
         )
 
     def private_notify(
-        self, game: TableTopGameState, notif_manager: NotificationManager
+        self, game: TableTopGameState, notif_manager: BotManager
     ):
         actor_cards = [card.card for card in game.state[self.user].integrity_cards]
         target_cards = [card.card for card in game.state[self.target].integrity_cards]

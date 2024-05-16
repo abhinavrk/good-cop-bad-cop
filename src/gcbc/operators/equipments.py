@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from gcbc.core.core_data import DeckState, Player, TableTopGameState
+from gcbc.core.core_data import Player
 from gcbc.operators.equipment.blackmail import Blackmail
 from gcbc.operators.equipment.defibrillator import Defibrillator
 from gcbc.operators.equipment.polygraph import Polygraph
@@ -7,10 +6,7 @@ from gcbc.operators.equipment.swap import Swap
 from gcbc.operators.equipment.taser import Taser
 
 
-@dataclass
 class Equipments:
-    game: TableTopGameState
-    deck: DeckState
 
     def blackmail(self, user: Player, target: Player) -> Blackmail:
         """
@@ -26,10 +22,7 @@ class Equipments:
         Raises:
             ValueError: If the created Blackmail instance is invalid.
         """
-        blackmail = Blackmail(user, target)
-        if not blackmail.is_valid(self.game, self.deck):
-            raise ValueError("Invalid Blackmail instance")
-        return blackmail
+        return Blackmail(user, target)
 
     def defibrillator(self, user: Player, target: Player) -> Defibrillator:
         """
@@ -45,10 +38,7 @@ class Equipments:
         Raises:
             ValueError: If the created Defibrillator instance is invalid.
         """
-        defibrillator = Defibrillator(user, target)
-        if not defibrillator.is_valid(self.game, self.deck):
-            raise ValueError("Invalid Defibrillator instance")
-        return defibrillator
+        return Defibrillator(user, target)
 
     def polygraph(self, user: Player, target: Player) -> Polygraph:
         """
@@ -64,10 +54,7 @@ class Equipments:
         Raises:
             ValueError: If the created Polygraph instance is invalid.
         """
-        polygraph = Polygraph(user, target)
-        if not polygraph.is_valid(self.game, self.user):
-            raise ValueError("Invalid Polygraph instance")
-        return polygraph
+        return Polygraph(user, target)
 
     def swap(
         self, user: Player, playerA: Player, cardA: int, playerB: Player, cardB: int
@@ -88,10 +75,7 @@ class Equipments:
         Raises:
             ValueError: If the created Swap instance is invalid.
         """
-        swap = Swap(user, playerA, cardA, playerB, cardB)
-        if not swap.is_valid(self.game, self.deck):
-            raise ValueError("Invalid Swap instance")
-        return swap
+        return Swap(user, playerA, cardA, playerB, cardB)
 
     def taser(self, user: Player, target: Player, aimed_at: Player) -> Taser:
         """
@@ -108,7 +92,4 @@ class Equipments:
         Raises:
             ValueError: If the created Taser instance is invalid.
         """
-        taser = Taser(user, target, aimed_at)
-        if not taser.is_valid(self.game, self.deck):
-            raise ValueError("Invalid Taser instance")
-        return taser
+        return Taser(user, target, aimed_at)

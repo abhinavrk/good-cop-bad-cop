@@ -1,9 +1,9 @@
 from copy import deepcopy
+from gcbc.bot.base_bot import BotManager
 from gcbc.core.core_data import (
     ActionType,
     Card,
     DeckState,
-    NotificationManager,
     Player,
     TableTopGameState,
 )
@@ -54,7 +54,7 @@ class Equip(BaseAction):
 
         return game, deck
 
-    def notify(self, game: TableTopGameState, notif_manager: NotificationManager):
+    def notify(self, game: TableTopGameState, notif_manager: BotManager):
         notif_manager.emit_public_notification(
             {
                 "action": ActionType.EQUIP,
@@ -64,7 +64,7 @@ class Equip(BaseAction):
         )
 
     def private_notify(
-        self, game: TableTopGameState, notif_manager: NotificationManager
+        self, game: TableTopGameState, notif_manager: BotManager
     ):
         equipped_card = game.state[self.actor].equipment
         notif_manager.emit_private_notification(

@@ -1,7 +1,7 @@
+from gcbc.bot.base_bot import BotManager
 from gcbc.core.core_data import (
     ActionType,
     DeckState,
-    NotificationManager,
     Player,
     TableTopGameState,
 )
@@ -26,7 +26,7 @@ class Aim(BaseAction):
         game.state[self.actor].gun.aimed_at = self.target
         return game, deck
 
-    def notify(self, game: TableTopGameState, notif_manager: NotificationManager):
+    def notify(self, game: TableTopGameState, notif_manager: BotManager):
         notif_manager.emit_public_notification(
             {
                 "action": ActionType.AIM,

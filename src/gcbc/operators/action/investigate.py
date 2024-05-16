@@ -1,8 +1,8 @@
+from gcbc.bot.base_bot import BotManager
 from gcbc.core.core_data import (
     ActionType,
     Card,
     DeckState,
-    NotificationManager,
     Player,
     TableTopGameState,
 )
@@ -28,7 +28,7 @@ class Investigate(BaseAction):
         # The investigate action doesn't modify the game state
         return game, deck
 
-    def notify(self, game: TableTopGameState, notif_manager: NotificationManager):
+    def notify(self, game: TableTopGameState, notif_manager: BotManager):
         notif_manager.emit_public_notification(
             {
                 "action": ActionType.INVESTIGATE,
@@ -39,10 +39,11 @@ class Investigate(BaseAction):
         )
 
     def private_notify(
-        self, game: TableTopGameState, notif_manager: NotificationManager
+        self, game: TableTopGameState, notif_manager: BotManager
     ):
         card_value = game.state[self.target].integrity_cards[self.target_card].card
         notif_manager.emit_private_notification(
+            self.actor,
             {
                 "action": ActionType.INVESTIGATE,
                 "private_data": {

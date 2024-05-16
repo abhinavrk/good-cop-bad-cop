@@ -3,10 +3,10 @@ from gcbc.core.core_data import (
     ActionType,
     Card,
     DeckState,
-    NotificationManager,
     Player,
     TableTopGameState,
 )
+from gcbc.bot.base_bot import BotManager
 from gcbc.core.core_data import IntegrityCard, PlayerHealthState
 from gcbc.operators.base_operator import BaseAction
 
@@ -58,7 +58,7 @@ class Shoot(BaseAction):
 
         return game, deck
 
-    def notify(self, game: TableTopGameState, notif_manager: NotificationManager):
+    def notify(self, game: TableTopGameState, notif_manager: BotManager):
         notif_manager.emit_public_notification(
             {
                 "action": ActionType.SHOOT,

@@ -1,4 +1,5 @@
-from gcbc.core.core_data import DeckState, NotificationManager, TableTopGameState
+from gcbc.bot.base_bot import BotManager
+from gcbc.core.core_data import DeckState, TableTopGameState
 
 
 class BaseOperator:
@@ -18,7 +19,7 @@ class BaseOperator:
         """
         pass
 
-    def notify(self, game: TableTopGameState, notif_manager: NotificationManager):
+    def notify(self, game: TableTopGameState, notif_manager: BotManager):
         """
         Emit a notification dict that includes any relevant metadata associated with
         this action that can be used to notify other players. The dict will
@@ -30,7 +31,7 @@ class BaseOperator:
         pass
 
     def private_notify(
-        self, game: TableTopGameState, notif_manager: NotificationManager
+        self, game: TableTopGameState, notif_manager: BotManager
     ):
         """
         Emit a notification dict that includes any relevant metadata associated with

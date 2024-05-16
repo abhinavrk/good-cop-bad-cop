@@ -1,6 +1,5 @@
-from gcbc.core.core_data import DeckState, TableTopGameState
-from gcbc.operators.action.aim import Aim
-from gcbc.operators.base_operator import BaseAction, BaseEquipment
+from dataclasses import dataclass
+from gcbc.core.core_data import DeckState, Player, TableTopGameState
 
 
 class BaseBot:
@@ -8,9 +7,7 @@ class BaseBot:
     This is a base class for implementing bots in GCBC.
     """
 
-    def pre_round(
-        self, game_state: TableTopGameState, deck_state: DeckState
-    ) -> BaseEquipment:
+    def pre_round(self, game_state: TableTopGameState, deck_state: DeckState):
         """
         Called before the round is started. This is where the bot should decide which
         equipment card to play.
@@ -24,9 +21,7 @@ class BaseBot:
         """
         pass
 
-    def action(
-        self, game_state: TableTopGameState, deck_state: DeckState
-    ) -> BaseAction:
+    def action(self, game_state: TableTopGameState, deck_state: DeckState):
         """
         Called when it is the bot's turn. This is where the bot should decide what action
         to take.
@@ -40,7 +35,7 @@ class BaseBot:
         """
         pass
 
-    def aim(self, game_state: TableTopGameState, deck_state: DeckState) -> Aim | None:
+    def aim(self, game_state: TableTopGameState, deck_state: DeckState):
         """
         Called when it is the bot's turn, and the bot has a gun. This is where the bot
         should decide which player to aim at.
@@ -71,3 +66,18 @@ class BaseBot:
         :param notification: The notification from another player.
         """
         pass
+
+
+@dataclass
+class BotManager:
+    player_map: dict[Player, BaseBot]
+
+    def get_bot(self, player: Player) -> BaseBot:
+        return self.player_map[player]
+
+    def emit_public_notification(self, notification: dict):
+        for _, bot in self.player_map.items():
+            bot.on_public_notification(notification)
+
+    def emit_private_notification(self, player: Player, notification: dict):
+        self.player_map[player].on_private_notification(notification)

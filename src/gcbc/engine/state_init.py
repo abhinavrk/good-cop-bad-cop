@@ -1,4 +1,5 @@
 import random
+from re import I
 from typing import List
 
 from gcbc.core.core_data import *
@@ -6,7 +7,7 @@ from gcbc.core.core_data import *
 
 class GCBCInitalizer:
     @staticmethod
-    def build_deck(num_players: int) -> List[IntegrityCard]:
+    def integrity_cards(num_players: int) -> List[IntegrityCard]:
         deck = [
             IntegrityCard.KINGPIN,
             IntegrityCard.AGENT,
@@ -27,8 +28,8 @@ class GCBCInitalizer:
         return deck
 
     @staticmethod
-    def setup_initial_assignment(num_players: int) -> TableTopGameState:
-        deck = GCBCInitalizer.build_deck(num_players)
+    def build_game_state(num_players: int) -> TableTopGameState:
+        deck = GCBCInitalizer.integrity_cards(num_players)
         random.shuffle(deck)
 
         table_top_state = {}
@@ -47,3 +48,9 @@ class GCBCInitalizer:
             )
 
         return TableTopGameState(table_top_state)
+
+    @staticmethod
+    def build_deck(num_players: int) -> DeckState:
+        return DeckState(
+            equipment_cards=[x.value for x in EquipmentCard], guns=num_players // 2
+        )

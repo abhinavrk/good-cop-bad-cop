@@ -1,11 +1,11 @@
 from copy import deepcopy
+from gcbc.bot.base_bot import BotManager
 from gcbc.core.core_data import (
     DeckState,
-    NotificationManager,
     Player,
     TableTopGameState,
 )
-from gcbc.data_models import EquipmentCard
+from gcbc.core.core_data import EquipmentCard
 from gcbc.operators.base_operator import BaseEquipment
 
 
@@ -39,7 +39,7 @@ class Taser(BaseEquipment):
         deck.return_equipment_card(EquipmentCard.TASER)
         return game, deck
 
-    def notify(self, game: TableTopGameState, notif_manager: NotificationManager):
+    def notify(self, game: TableTopGameState, notif_manager: BotManager):
         notif_manager.emit_public_notification(
             {
                 "action": EquipmentCard.TASER,

@@ -2,8 +2,6 @@ import enum
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from gcbc.bot.base_bot import BaseBot
-
 """
 Rules for the game can be found at:
 https://upload.snakesandlattes.com/rules/g/GoodCopBadCop.pdf
@@ -141,7 +139,7 @@ class TableTopGameState:
         return self.state[player]
 
     def is_player_alive(self, player: Player) -> bool:
-        return self.state[player].health == PlayerHealthState.ALIVE
+        return self.state[player].health != PlayerHealthState.DEAD
 
     def get_player_health(self, player: Player) -> PlayerHealthState:
         return self.state[player].health
@@ -190,13 +188,7 @@ class DeckState:
     def return_equipment_card(self, card: EquipmentCard):
         self.equipment_cards.insert(0, card)
 
-@dataclass
-class NotificationManager:
-    player_map: dict[Player, BaseBot]
-
-    def emit_public_notification(self, notification: dict):
-        for _, bot in self.player_map.items():
-            bot.on_public_notification(notification)
-
-    def emit_private_notification(self, player: Player, notification: dict):
-        self.player_map[player].on_private_notification(notification)
+    def opaque_state(self):
+        return DeckState(
+            [EquipmentCard.UNKNOWN for _ in range(len(self.equipment_cards))], self.guns
+        )
