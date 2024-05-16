@@ -1,4 +1,5 @@
 from copy import deepcopy
+from dataclasses import dataclass
 from gcbc.bot.base_bot import BotManager
 from gcbc.core.core_data import (
     DeckState,
@@ -9,16 +10,13 @@ from gcbc.core.core_data import EquipmentCard
 from gcbc.operators.base_operator import BaseEquipment
 
 
+@dataclass
 class Swap(BaseEquipment):
-
-    def __init__(
-        self, user: Player, playerA: Player, cardA: int, playerB: Player, cardB: int
-    ):
-        self.user = user
-        self.playerA = playerA
-        self.cardA = cardA
-        self.playerB = playerB
-        self.cardB = cardB
+    user: Player
+    playerA: Player
+    cardA: int
+    playerB: Player
+    cardB: int
 
     def is_valid(self, game: TableTopGameState, deck: DeckState) -> bool:
         return (

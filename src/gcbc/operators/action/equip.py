@@ -1,4 +1,5 @@
 from copy import deepcopy
+from dataclasses import dataclass
 from gcbc.bot.base_bot import BotManager
 from gcbc.core.core_data import (
     ActionType,
@@ -10,10 +11,10 @@ from gcbc.core.core_data import (
 from gcbc.operators.base_operator import BaseAction
 
 
+@dataclass
 class Equip(BaseAction):
-    def __init__(self, actor: Player, card_to_flip: int):
-        self.actor = actor
-        self.card_to_flip = card_to_flip
+    actor: Player
+    card_to_flip: Card
 
     def is_valid(self, game: TableTopGameState, deck: DeckState) -> bool:
         if self.actor not in game.state:

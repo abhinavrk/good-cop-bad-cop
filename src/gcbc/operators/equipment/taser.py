@@ -1,4 +1,5 @@
 from copy import deepcopy
+from dataclasses import dataclass
 from gcbc.bot.base_bot import BotManager
 from gcbc.core.core_data import (
     DeckState,
@@ -9,12 +10,11 @@ from gcbc.core.core_data import EquipmentCard
 from gcbc.operators.base_operator import BaseEquipment
 
 
+@dataclass
 class Taser(BaseEquipment):
-
-    def __init__(self, user: Player, target: Player, aimed_at: Player):
-        self.user = user
-        self.target = target
-        self.aimed_at = aimed_at
+    user: Player
+    target: Player
+    aimed_at: Player
 
     def is_valid(self, game: TableTopGameState, deck: DeckState) -> bool:
         return (

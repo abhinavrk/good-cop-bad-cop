@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from gcbc.bot.base_bot import BotManager
 from gcbc.core.core_data import (
     ActionType,
@@ -8,10 +9,10 @@ from gcbc.core.core_data import (
 from gcbc.operators.base_operator import BaseAction
 
 
+@dataclass
 class Aim(BaseAction):
-    def __init__(self, actor: Player, target: Player):
-        self.actor = actor
-        self.target = target
+    actor: Player
+    target: Player
 
     def is_valid(self, game: TableTopGameState, deck: DeckState) -> bool:
         return (

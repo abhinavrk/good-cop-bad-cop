@@ -1,4 +1,5 @@
 from copy import deepcopy
+from dataclasses import dataclass
 from gcbc.core.core_data import (
     ActionType,
     Card,
@@ -11,10 +12,10 @@ from gcbc.core.core_data import IntegrityCard, PlayerHealthState
 from gcbc.operators.base_operator import BaseAction
 
 
+@dataclass
 class Shoot(BaseAction):
-    def __init__(self, actor: Player, target: Player):
-        self.actor = actor
-        self.target = target
+    actor: Player
+    target: Player
 
     def is_valid(self, game: TableTopGameState, deck: DeckState) -> bool:
         if self.actor not in game.state:
